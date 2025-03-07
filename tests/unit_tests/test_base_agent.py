@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 # Add project root to the path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-# Import from agents module
+# Import from project root
 from agents import BaseAgent
 
 class TestBaseAgent:
@@ -34,7 +34,7 @@ class TestBaseAgent:
         agent = BaseAgent(model="gpt-4o-mini")
         
         # Add some history
-        agent.history = ["entry1", "entry2"]
+        agent.history = [(None, "entry1"), (None, "entry2")]
         agent.prev_comm = "previous command"
         
         # Reset agent

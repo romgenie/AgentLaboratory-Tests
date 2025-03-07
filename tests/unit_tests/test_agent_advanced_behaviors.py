@@ -7,9 +7,7 @@ import json
 # Add the project root to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from agents.base_agent import BaseAgent
-from agents.professor_agent import ProfessorAgent
-from agents.phd_student_agent import PhDStudentAgent
+from agents import BaseAgent, ProfessorAgent, PhDStudentAgent
 
 # Helper class for advanced behavior testing
 class _TestableAgent(BaseAgent):
