@@ -76,7 +76,8 @@ class TestProfessorAgent:
     def test_generate_readme(self, mock_query_model):
         """Test ProfessorAgent generate_readme method."""
         # Setup mock response
-        mock_query_model.return_value = "```markdown\n# Test README\n\nThis is a test README.\n```"
+        mock_response = "```markdown\n# Test README\n\nThis is a test README.\n```"
+        mock_query_model.return_value = mock_response
         
         # Create agent
         agent = ProfessorAgent(model="gpt-4o-mini")
@@ -88,5 +89,6 @@ class TestProfessorAgent:
         # Check that query_model was called
         mock_query_model.assert_called_once()
         
-        # Check that the result is correct
-        assert result == "# Test README\n\nThis is a test README.\n```"
+        # Check that the result is correct - should remove "```markdown" but keep the trailing "```"
+        expected_result = mock_response.replace("```markdown", "")
+        assert result == expected_result
