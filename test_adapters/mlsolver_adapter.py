@@ -176,20 +176,23 @@ class MLESolverAdapter:
         self.openai_api_key = openai_api_key
         self.commands = [ReplaceAdapter(), EditAdapter()]
     
-    def system_prompt(self, commands=True):
-        """Generate a system prompt for testing."""
-        return (
-            f"[TEST SYSTEM PROMPT]\n"
-            f"Role: ML Engineer\n"
-            f"Plan: {self.plan}\n"
-            f"Insights: {self.insights}\n"
-            f"Notes: {self.notes}\n"
-            f"Commands: {self.command_descriptions() if commands else 'None'}"
-        )
+# This method is intentionally removed - using the updated version below
     
     def role_description(self):
         """Return role description for testing."""
         return "You are an expert machine learning engineer working at a top university."
+        
+    def system_prompt(self, commands=True):
+        """Generate a system prompt for testing."""
+        return (
+            f"[TEST SYSTEM PROMPT]\n"
+            f"You are an expert machine learning engineer.\n"
+            f"Plan: {self.plan}\n"
+            f"Insights: {self.insights}\n"
+            f"Notes: {self.notes}\n"
+            f"Dataset code: {self.dataset_code[:50]}...\n"
+            f"Commands: {self.command_descriptions() if commands else 'None'}"
+        )
     
     def phase_prompt(self):
         """Return phase prompt for testing."""
@@ -281,6 +284,21 @@ def extract_prompt(text, word):
         
     return text[start_idx:end_idx].strip()
 
+
+# Add query_model for tests that need it
+def query_model(model_str, prompt, system_prompt=None, openai_api_key=None, temp=0.7, max_tokens=None):
+    """Mock implementation of query_model for testing."""
+    # Simple model response simulation based on prompt content
+    if "error" in prompt.lower():
+        return "Error in processing the query."
+    
+    # Different response based on model type
+    if model_str in ["gpt-4o", "gpt-4o-mini"]:
+        return f"OpenAI model response to: {prompt[:30]}..."
+    elif model_str == "deepseek-chat":
+        return f"DeepSeek model response to: {prompt[:30]}..."
+    else:
+        return f"Unknown model response to: {prompt[:30]}..."
 
 # Export adapter classes and functions to replace originals
 Command = CommandAdapter

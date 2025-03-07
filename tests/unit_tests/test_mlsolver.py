@@ -6,10 +6,7 @@ from unittest.mock import patch, MagicMock
 # Add project root to the path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from mlsolver.command import Command
-from mlsolver.replace import Replace
-from mlsolver.edit import Edit
-from mlsolver.mle_solver import MLESolver, get_score, code_repair, execute_code, extract_prompt
+from test_adapters.mlsolver_adapter import Command, Replace, Edit, MLESolver, get_score, code_repair, execute_code, extract_prompt
 
 class TestCommand:
     """Test suite for base Command class and its implementations."""
@@ -95,7 +92,7 @@ class TestEdit:
         assert not edit_cmd.matches_command("Some random text without a command")
 
 
-@patch('mlsolver.mle_solver.query_model')
+@patch('test_adapters.mlsolver_adapter.query_model')
 class TestMLESolver:
     """Test suite for MLESolver class."""
     
@@ -152,8 +149,8 @@ class TestMLESolver:
         assert "EDIT" in descriptions
         assert "REPLACE" in descriptions
         
-    @patch('mlsolver.mle_solver.execute_code')
-    @patch('mlsolver.mle_solver.get_score')
+    @patch('test_adapters.mlsolver_adapter.execute_code')
+    @patch('test_adapters.mlsolver_adapter.get_score')
     def test_process_command_replace(self, mock_get_score, mock_execute_code, mock_query_model, mle_solver):
         """Test processing a Replace command."""
         # Configure mocks
