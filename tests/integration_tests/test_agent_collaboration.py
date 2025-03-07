@@ -6,9 +6,12 @@ from unittest.mock import patch, MagicMock
 # Add project root to the path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from agents.professor_agent import ProfessorAgent
-from agents.phd_student_agent import PhDStudentAgent
-from agents.ml_engineer_agent import MLEngineerAgent
+# Use adapter classes instead of direct imports
+from test_adapters.laboratory_adapter import (
+    ProfessorAgentAdapter as ProfessorAgent,
+    PhDStudentAgentAdapter as PhDStudentAgent,
+    MLEngineerAgentAdapter as MLEngineerAgent
+)
 
 @pytest.mark.integration
 class TestAgentCollaboration:
