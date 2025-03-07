@@ -16,10 +16,12 @@ __pycache__/
 *$py.class
 Figure*.png
 testrun.py
-test_adapters/
-tests/
+# Allow tests and adapters for this branch
+# test_adapters/
+# tests/
+# Exclude markdown files except specific ones
 *.md
+!README.md
 .env
 .coverage
 coverage.xml
-.gitignore
