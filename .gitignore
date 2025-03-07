@@ -11,6 +11,15 @@ junk/data/*
 research_dir/*
 .DS_Store
 state_saves/*
-__pycache__/*
+__pycache__/
+*.py[cod]
+*$py.class
 Figure*.png
 testrun.py
+test_adapters/
+tests/
+*.md
+.env
+.coverage
+coverage.xml
+.gitignore
