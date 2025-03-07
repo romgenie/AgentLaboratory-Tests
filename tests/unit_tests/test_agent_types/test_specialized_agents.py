@@ -6,13 +6,14 @@ from unittest.mock import patch, MagicMock
 # Add project root to the path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
-from agents.professor_agent import ProfessorAgent
-from agents.phd_student_agent import PhDStudentAgent
-# Import not available
-# from agents.postdoc_agent import PostdocAgent
-from agents.reviewers_agent import ReviewersAgent
-from agents.ml_engineer_agent import MLEngineerAgent
-from agents.sw_engineer_agent import SWEngineerAgent
+from test_adapters.laboratory_adapter import (
+    ProfessorAgentAdapter as ProfessorAgent,
+    PhDStudentAgentAdapter as PhDStudentAgent,
+    MLEngineerAgentAdapter as MLEngineerAgent,
+    SWEngineerAgentAdapter as SWEngineerAgent
+)
+# ReviewersAgent not available in adapters
+from agents import ReviewersAgent
 
 class TestProfessorAgent:
     """Test suite for ProfessorAgent class."""
@@ -33,7 +34,7 @@ class TestProfessorAgent:
         assert "analytical" in professor.personality_traits
         assert professor.model == "gpt-4o"
         
-    @patch('agents.professor_agent.ProfessorAgent.get_response')
+    @patch('test_adapters.laboratory_adapter.ProfessorAgentAdapter.get_response')
     def test_research_planning(self, mock_get_response):
         """Test professor agent's research planning capabilities."""
         professor = ProfessorAgent(
@@ -69,7 +70,7 @@ class TestPhDStudentAgent:
         assert "dedicated" in phd_student.personality_traits
         assert phd_student.model == "gpt-4o"
         
-    @patch('agents.phd_student_agent.PhDStudentAgent.get_response')
+    @patch('test_adapters.laboratory_adapter.PhDStudentAgentAdapter.get_response')
     def test_literature_analysis(self, mock_get_response):
         """Test PhD student agent's literature analysis capabilities."""
         phd_student = PhDStudentAgent(
@@ -109,7 +110,7 @@ class TestMLEngineerAgent:
         assert "detail-oriented" in ml_engineer.personality_traits
         assert ml_engineer.model == "gpt-4o"
         
-    @patch('agents.ml_engineer_agent.MLEngineerAgent.get_response')
+    @patch('test_adapters.laboratory_adapter.MLEngineerAgentAdapter.get_response')
     def test_model_implementation(self, mock_get_response):
         """Test ML engineer agent's model implementation capabilities."""
         ml_engineer = MLEngineerAgent(
