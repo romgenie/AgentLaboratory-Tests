@@ -1,0 +1,264 @@
+import pytest
+import sys
+import os
+import tempfile
+import shutil
+from unittest.mock import patch, MagicMock
+
+# Add project root to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+# Import the adapter modules
+from test_adapters.workflow_methods_adapter import (
+    set_model,
+    save_state,
+    set_agent_attr,
+    reset_agents,
+    perform_research,
+    plan_formulation,
+    literature_review,
+    data_preparation,
+    running_experiments,
+    results_interpretation,
+    report_writing,
+    report_refinement,
+    human_in_loop
+)
+
+from test_adapters.laboratory_adapter import (
+    BaseAgentAdapter,
+    ProfessorAgentAdapter,
+    PhDStudentAgentAdapter,
+    MLEngineerAgentAdapter
+)
+
+class TestWorkflowMethods:
+    """Test suite for laboratory workflow methods."""
+    
+    @pytest.fixture
+    def workflow(self):
+        """Create a test workflow instance."""
+        # Create a simple mock workflow
+        workflow = MagicMock()
+        workflow.research_topic = "Test Research Topic"
+        workflow.model = "test-model"
+        workflow.agents = [
+            ProfessorAgentAdapter(name="Professor Smith"),
+            PhDStudentAgentAdapter(name="PhD Student Jones"),
+            MLEngineerAgentAdapter(name="ML Engineer Taylor")
+        ]
+        workflow.progress = {}
+        return workflow
+    
+    @pytest.fixture
+    def temp_dir(self):
+        """Create a temporary directory for test outputs."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        # Clean up after the test
+        shutil.rmtree(temp_dir)
+    
+    @pytest.mark.parametrize("method_name", [
+        "set_model",
+        "save_state",
+        "set_agent_attr",
+        "reset_agents",
+        "perform_research",
+        "report_refinement",
+        "report_writing",
+        "results_interpretation",
+        "running_experiments",
+        "data_preparation",
+        "plan_formulation",
+        "literature_review",
+        "human_in_loop"
+    ])
+    def test_method_imports(self, method_name):
+        """Test that all workflow methods can be imported."""
+        # This test now checks the adapter methods
+        if method_name == "set_model":
+            assert callable(set_model)
+        elif method_name == "save_state":
+            assert callable(save_state)
+        elif method_name == "set_agent_attr":
+            assert callable(set_agent_attr)
+        elif method_name == "reset_agents":
+            assert callable(reset_agents)
+        elif method_name == "perform_research":
+            assert callable(perform_research)
+        elif method_name == "report_refinement":
+            assert callable(report_refinement)
+        elif method_name == "report_writing":
+            assert callable(report_writing)
+        elif method_name == "results_interpretation":
+            assert callable(results_interpretation)
+        elif method_name == "running_experiments":
+            assert callable(running_experiments)
+        elif method_name == "data_preparation":
+            assert callable(data_preparation)
+        elif method_name == "plan_formulation":
+            assert callable(plan_formulation)
+        elif method_name == "literature_review":
+            assert callable(literature_review)
+        elif method_name == "human_in_loop":
+            assert callable(human_in_loop)
+        else:
+            assert False, f"Test missing for method {method_name}"
+    
+    def test_workflow_utility_methods(self, workflow):
+        """Test utility methods that support the research workflow."""
+        # Store original values for later comparison
+        original_name = workflow.agents[0].name
+        
+        # Test set_model
+        result = set_model(workflow, "gpt-4o")
+        assert workflow.model == "gpt-4o"
+        assert workflow.llm_backend == "gpt-4o"
+        assert all(agent.model == "gpt-4o" for agent in workflow.agents)
+        assert "gpt-4o" in result
+        
+        # Test set_agent_attr
+        result = set_agent_attr(workflow, "Professor Smith", "expertise", ["AI", "ML"])
+        assert workflow.agents[0].expertise == ["AI", "ML"]
+        assert "Professor Smith" in result
+        
+        # Test reset_agents
+        # First save the original name so the reset will work
+        workflow.agents[0].original_name = original_name
+        # Now modify the name
+        workflow.agents[0].name = "Modified Name"
+        result = reset_agents(workflow)
+        assert workflow.agents[0].name == original_name  # Should be reset to original
+        assert "reset" in result.lower()
+        
+        # Test human_in_loop
+        mock_input = MagicMock(return_value="proceed")
+        result = human_in_loop(workflow, "testing", input_func=mock_input)
+        assert "approved" in result
+        assert workflow.progress.get("human_approval_testing") is True
+        
+        # Test with different input
+        mock_input = MagicMock(return_value="modify")
+        result = human_in_loop(workflow, "testing2", input_func=mock_input)
+        assert "modifications" in result
+    
+    def test_save_state(self, workflow, temp_dir):
+        """Test save_state functionality."""
+        # Create a simplified workflow with serializable values
+        from unittest.mock import MagicMock
+        
+        simple_workflow = MagicMock()
+        simple_workflow.research_topic = "Test Topic"
+        simple_workflow.model = "gpt-4o"
+        simple_workflow.progress = {"plan_formulation": True} 
+        simple_workflow.results = {"accuracy": 0.85}
+        
+        # Create simplified agent representations
+        class SimpleAgent:
+            def __init__(self, name, expertise):
+                self.name = name
+                self.expertise = expertise
+                
+        simple_workflow.agents = [
+            SimpleAgent("Professor", ["AI"]),
+            SimpleAgent("Student", ["ML"]),
+            SimpleAgent("Engineer", ["Data Science"])
+        ]
+        
+        # Now run the test
+        result = save_state(simple_workflow, save_dir=temp_dir)
+        
+        # Verify result is a filepath
+        assert os.path.exists(result)
+        
+        # Verify content is a JSON file with expected keys
+        import json
+        with open(result, 'r') as f:
+            state = json.load(f)
+            
+        assert state["research_topic"] == simple_workflow.research_topic
+        assert state["model"] == simple_workflow.model
+        assert "agents" in state
+        assert len(state["agents"]) == 3
+    
+    def test_research_phase_methods(self, workflow):
+        """Test methods that implement research workflow phases."""
+        # Setup workflow with necessary attributes
+        workflow.progress = {}
+        
+        # Test plan formulation
+        result = plan_formulation(workflow)
+        assert hasattr(workflow, "research_plan")
+        assert "plan formulation completed" in result.lower()
+        assert workflow.progress.get("plan_formulation") is True
+        
+        # Test literature review
+        result = literature_review(workflow)
+        assert hasattr(workflow, "literature_review")
+        assert "literature review completed" in result.lower()
+        assert workflow.progress.get("literature_review") is True
+        
+        # Test data preparation
+        result = data_preparation(workflow)
+        assert hasattr(workflow, "data_preparation")
+        assert "data preparation completed" in result.lower()
+        assert workflow.progress.get("data_preparation") is True
+        
+        # Test running experiments
+        result = running_experiments(workflow)
+        assert hasattr(workflow, "experiments")
+        assert "experiments completed" in result.lower()
+        assert workflow.progress.get("running_experiments") is True
+        
+        # Test results interpretation
+        result = results_interpretation(workflow)
+        assert hasattr(workflow, "results")
+        assert "results interpretation completed" in result.lower()
+        assert workflow.progress.get("results_interpretation") is True
+        
+        # Test report writing
+        result = report_writing(workflow)
+        assert hasattr(workflow, "report")
+        assert hasattr(workflow, "latex_report")
+        assert "report writing completed" in result.lower()
+        assert workflow.progress.get("report_writing") is True
+        
+        # Test report refinement
+        result = report_refinement(workflow)
+        assert "acknowledgments" in workflow.report.lower()
+        assert "report refinement completed" in result.lower()
+        assert workflow.progress.get("report_refinement") is True
+    
+    def test_perform_research(self, workflow):
+        """Test the end-to-end perform_research method."""
+        # Patch the individual phase methods
+        workflow.plan_formulation = MagicMock(return_value="Plan formulation completed")
+        workflow.literature_review = MagicMock(return_value="Literature review completed")
+        workflow.data_preparation = MagicMock(return_value="Data preparation completed")
+        workflow.running_experiments = MagicMock(return_value="Experiments completed")
+        workflow.results_interpretation = MagicMock(return_value="Results interpretation completed")
+        workflow.report_writing = MagicMock(return_value="Report writing completed")
+        workflow.report_refinement = MagicMock(return_value="Report refinement completed")
+        
+        # Test with the current research topic
+        result = perform_research(workflow)
+        assert workflow.research_topic in result
+        
+        # Verify all phases were called
+        workflow.plan_formulation.assert_called_once()
+        workflow.literature_review.assert_called_once()
+        workflow.data_preparation.assert_called_once()
+        workflow.running_experiments.assert_called_once()
+        workflow.results_interpretation.assert_called_once()
+        workflow.report_writing.assert_called_once()
+        workflow.report_refinement.assert_called_once()
+        
+        # Test with a new research topic
+        new_topic = "New Research Topic"
+        result = perform_research(workflow, topic=new_topic)
+        assert workflow.research_topic == new_topic
+        assert new_topic in result
+        
+        # Verify all phases were called again
+        assert workflow.plan_formulation.call_count == 2
+        assert workflow.literature_review.call_count == 2

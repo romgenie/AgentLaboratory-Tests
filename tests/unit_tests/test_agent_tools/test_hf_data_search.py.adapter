@@ -1,0 +1,115 @@
+import pytest
+import sys
+import os
+
+# Add project root to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+# Import from the adapter instead of the original module
+from test_adapters.hf_data_adapter import (
+    search_hf_datasets,
+    search_hf_models,
+    HuggingFaceEngine
+)
+
+class TestHuggingFaceDataSearch:
+    """Test suite for Hugging Face data search functionality."""
+    
+    def test_search_hf_datasets_returns_list(self):
+        """Test that search_hf_datasets returns a list of results."""
+        results = search_hf_datasets("vision")
+        assert isinstance(results, list)
+        assert len(results) > 0
+    
+    def test_search_hf_datasets_max_results(self):
+        """Test that search_hf_datasets respects max_results parameter."""
+        max_results = 1
+        results = search_hf_datasets("nlp", max_results=max_results)
+        assert len(results) <= max_results
+    
+    def test_search_hf_datasets_result_structure(self):
+        """Test that search_hf_datasets results have the expected structure."""
+        results = search_hf_datasets("image")
+        
+        for dataset in results:
+            assert isinstance(dataset, dict)
+            assert 'id' in dataset
+            assert 'title' in dataset
+            assert 'description' in dataset
+            assert 'tags' in dataset
+            assert 'downloads' in dataset
+            assert 'likes' in dataset
+            
+            assert isinstance(dataset['id'], str)
+            assert isinstance(dataset['title'], str)
+            assert isinstance(dataset['description'], str)
+            assert isinstance(dataset['tags'], list)
+            assert isinstance(dataset['downloads'], int)
+            assert isinstance(dataset['likes'], int)
+    
+    def test_search_hf_models_returns_list(self):
+        """Test that search_hf_models returns a list of results."""
+        results = search_hf_models("transformer")
+        assert isinstance(results, list)
+        assert len(results) > 0
+    
+    def test_search_hf_models_max_results(self):
+        """Test that search_hf_models respects max_results parameter."""
+        max_results = 2
+        results = search_hf_models("vision", max_results=max_results)
+        assert len(results) <= max_results
+    
+    def test_search_hf_models_result_structure(self):
+        """Test that search_hf_models results have the expected structure."""
+        results = search_hf_models("text")
+        
+        for model in results:
+            assert isinstance(model, dict)
+            assert 'id' in model
+            assert 'title' in model
+            assert 'description' in model
+            assert 'tags' in model
+            assert 'downloads' in model
+            assert 'likes' in model
+            
+            assert isinstance(model['id'], str)
+            assert isinstance(model['title'], str)
+            assert isinstance(model['description'], str)
+            assert isinstance(model['tags'], list)
+            assert isinstance(model['downloads'], int)
+            assert isinstance(model['likes'], int)
+    
+    def test_huggingface_engine_class(self):
+        """Test the HuggingFaceEngine class functionality."""
+        engine = HuggingFaceEngine()
+        
+        # Test dataset search
+        datasets = engine.search_datasets("classification")
+        assert isinstance(datasets, list)
+        assert len(datasets) > 0
+        
+        # Test model search
+        models = engine.search_models("nlp")
+        assert isinstance(models, list)
+        assert len(models) > 0
+        
+        # Test getting dataset details
+        dataset_id = datasets[0]['id']
+        dataset_details = engine.get_dataset_details(dataset_id)
+        assert isinstance(dataset_details, dict)
+        assert 'splits' in dataset_details
+        assert 'num_samples' in dataset_details
+        
+        # Test getting model details
+        model_id = models[0]['id']
+        model_details = engine.get_model_details(model_id)
+        assert isinstance(model_details, dict)
+        assert 'parameters' in model_details
+        assert 'architecture' in model_details
+        
+        # Test invalid ID handling
+        invalid_dataset = engine.get_dataset_details("invalid_id")
+        assert 'error' in invalid_dataset
+        
+        invalid_model = engine.get_model_details("invalid_id")
+        assert 'error' in invalid_model

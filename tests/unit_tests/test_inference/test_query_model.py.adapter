@@ -1,0 +1,199 @@
+import pytest
+import sys
+import os
+from unittest.mock import patch, MagicMock
+
+# Add project root to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+# Import from the adapter instead of the original module
+from test_adapters.inference_adapter import (
+    query_model,
+    calculate_token_usage,
+    estimate_cost,
+    track_request
+)
+
+class TestQueryModel:
+    """Test suite for query_model functionality."""
+    
+    def test_query_model_openai(self):
+        """Test that query_model handles OpenAI models correctly."""
+        result = query_model(
+            model_str="gpt-4o",
+            prompt="What is the capital of France?",
+            system_prompt="You are a helpful assistant."
+        )
+        
+        assert isinstance(result, str)
+        assert "OpenAI model response to:" in result
+    
+    def test_query_model_deepseek(self):
+        """Test that query_model handles DeepSeek models correctly."""
+        result = query_model(
+            model_str="deepseek-chat",
+            prompt="What is the capital of Germany?",
+            system_prompt="You are a helpful assistant."
+        )
+        
+        assert isinstance(result, str)
+        assert "DeepSeek model response to:" in result
+    
+    def test_query_model_unknown(self):
+        """Test that query_model handles unknown models correctly."""
+        result = query_model(
+            model_str="custom-model",
+            prompt="What is the capital of Italy?",
+            system_prompt="You are a helpful assistant."
+        )
+        
+        assert isinstance(result, str)
+        assert "Unknown model response to:" in result
+    
+    def test_query_model_parameters(self):
+        """Test that query_model accepts all expected parameters."""
+        result = query_model(
+            model_str="gpt-4o",
+            prompt="What is the capital of Spain?",
+            system_prompt="You are a helpful assistant.",
+            openai_api_key="fake_api_key",
+            temp=0.5,
+            max_tokens=100
+        )
+        
+        assert isinstance(result, str)
+
+class TestTokenUsage:
+    """Test suite for token usage calculation."""
+    
+    def test_calculate_token_usage(self):
+        """Test that calculate_token_usage returns the expected structure."""
+        prompt = "This is a test prompt for token calculation."
+        result = calculate_token_usage(prompt)
+        
+        assert isinstance(result, dict)
+        assert "prompt_tokens" in result
+        assert "completion_tokens" in result
+        assert "total_tokens" in result
+        assert result["total_tokens"] == result["prompt_tokens"] + result["completion_tokens"]
+    
+    def test_calculate_token_usage_with_model(self):
+        """Test that calculate_token_usage handles different models."""
+        prompt = "This is a test prompt for token calculation."
+        result1 = calculate_token_usage(prompt, "gpt-4")
+        result2 = calculate_token_usage(prompt, "gpt-4o")
+        
+        # Results should be the same since our mock doesn't differentiate by model,
+        # but this tests the interface
+        assert result1["prompt_tokens"] == result2["prompt_tokens"]
+        assert result1["completion_tokens"] == result2["completion_tokens"]
+    
+    def test_token_usage_scaling(self):
+        """Test that token usage scales with prompt length."""
+        short_prompt = "Short"
+        long_prompt = "This is a much longer prompt that should result in more tokens being used."
+        
+        short_result = calculate_token_usage(short_prompt)
+        long_result = calculate_token_usage(long_prompt)
+        
+        assert long_result["prompt_tokens"] > short_result["prompt_tokens"]
+        assert long_result["completion_tokens"] > short_result["completion_tokens"]
+        assert long_result["total_tokens"] > short_result["total_tokens"]
+
+class TestCostEstimation:
+    """Test suite for cost estimation."""
+    
+    def test_estimate_cost(self):
+        """Test that estimate_cost returns a float value."""
+        tokens = {
+            "prompt_tokens": 100,
+            "completion_tokens": 50,
+            "total_tokens": 150
+        }
+        
+        result = estimate_cost(tokens)
+        
+        assert isinstance(result, float)
+        assert result > 0
+    
+    def test_estimate_cost_with_different_models(self):
+        """Test that estimate_cost handles different models with different pricing."""
+        tokens = {
+            "prompt_tokens": 100,
+            "completion_tokens": 50,
+            "total_tokens": 150
+        }
+        
+        result1 = estimate_cost(tokens, "gpt-4")
+        result2 = estimate_cost(tokens, "gpt-4o")
+        result3 = estimate_cost(tokens, "o1-preview")
+        
+        # Different models should have different costs
+        assert result1 != result2
+        assert result2 != result3
+        assert result1 != result3
+    
+    def test_estimate_cost_with_unknown_model(self):
+        """Test that estimate_cost handles unknown models."""
+        tokens = {
+            "prompt_tokens": 100,
+            "completion_tokens": 50,
+            "total_tokens": 150
+        }
+        
+        # Should use default rates for unknown models
+        result = estimate_cost(tokens, "unknown-model")
+        
+        assert isinstance(result, float)
+        assert result > 0
+
+class TestRequestTracking:
+    """Test suite for request tracking."""
+    
+    def test_track_request(self):
+        """Test that track_request returns the expected structure."""
+        model_str = "gpt-4"
+        prompt = "What is the capital of France?"
+        response = "The capital of France is Paris."
+        
+        result = track_request(model_str, prompt, response)
+        
+        assert isinstance(result, dict)
+        assert "model" in result
+        assert "prompt_length" in result
+        assert "response_length" in result
+        assert "tokens" in result
+        assert "cost" in result
+        assert "timestamp" in result
+        
+        assert result["model"] == model_str
+        assert result["prompt_length"] == len(prompt)
+        assert result["response_length"] == len(response)
+        assert isinstance(result["tokens"], dict)
+        assert isinstance(result["cost"], float)
+        assert isinstance(result["timestamp"], str)
+    
+    def test_track_request_different_models(self):
+        """Test that track_request handles different models."""
+        prompt = "What is the capital of France?"
+        response = "The capital of France is Paris."
+        
+        result1 = track_request("gpt-4", prompt, response)
+        result2 = track_request("gpt-4o", prompt, response)
+        
+        # Different models should have different costs
+        assert result1["cost"] != result2["cost"]
+        
+    def test_track_request_content_scaling(self):
+        """Test that track_request scales with content length."""
+        model_str = "gpt-4"
+        short_prompt = "Short?"
+        long_prompt = "This is a much longer prompt that should result in more tokens and higher cost."
+        response = "Response"
+        
+        short_result = track_request(model_str, short_prompt, response)
+        long_result = track_request(model_str, long_prompt, response)
+        
+        assert long_result["prompt_length"] > short_result["prompt_length"]
+        assert long_result["tokens"]["prompt_tokens"] > short_result["tokens"]["prompt_tokens"]
+        assert long_result["cost"] > short_result["cost"]
