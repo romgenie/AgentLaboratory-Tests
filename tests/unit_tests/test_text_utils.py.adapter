@@ -1,0 +1,154 @@
+"""
+Tests for the text utilities.
+
+This module verifies that the text utility functions work correctly.
+"""
+
+import pytest
+import sys
+import os
+
+# Add project root to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+# Import from adapter instead of directly
+from test_adapters.utils_adapter import truncate_text, extract_code_blocks
+
+
+class TestTextUtils:
+    """Test suite for text utility functions."""
+    
+    def test_truncate_text_no_truncation_needed(self):
+        """Test that truncate_text returns original text when no truncation is needed."""
+        text = "This is a short text."
+        max_length = 100
+        
+        result = truncate_text(text, max_length)
+        
+        assert result == text
+        assert len(result) <= max_length
+    
+    def test_truncate_text_truncation_needed(self):
+        """Test that truncate_text properly truncates text when needed."""
+        text = "This is a longer text that will need to be truncated for the test."
+        max_length = 20
+        
+        result = truncate_text(text, max_length)
+        
+        assert len(result) <= max_length
+        assert result.endswith("...")
+        assert result.startswith(text[:max_length-3])
+    
+    def test_truncate_text_edge_cases(self):
+        """Test truncate_text with edge cases."""
+        # Empty text
+        assert truncate_text("", 10) == ""
+        
+        # Max length equal to text length
+        text = "Exact size"
+        assert truncate_text(text, len(text)) == text
+        
+        # Max length less than ellipsis
+        assert truncate_text("123456789", 2) == ".."
+    
+    def test_extract_code_blocks_simple(self):
+        """Test extract_code_blocks with simple code blocks."""
+        text = """
+        Here is some text with a code block:
+        
+        ```
+        def hello_world():
+            print("Hello, World!")
+        ```
+        
+        End of the text.
+        """
+        
+        blocks = extract_code_blocks(text)
+        
+        assert len(blocks) == 1
+        assert "def hello_world()" in blocks[0]
+        assert "print(\"Hello, World!\")" in blocks[0]
+    
+    def test_extract_code_blocks_with_language(self):
+        """Test extract_code_blocks with language specified."""
+        text = """
+        Here is Python code:
+        
+        ```python
+        def factorial(n):
+            if n <= 1:
+                return 1
+            return n * factorial(n-1)
+        ```
+        
+        And here is some JavaScript:
+        
+        ```javascript
+        function greet(name) {
+            return `Hello, ${name}!`;
+        }
+        ```
+        """
+        
+        blocks = extract_code_blocks(text)
+        
+        assert len(blocks) == 2
+        assert "def factorial(n)" in blocks[0]
+        assert "function greet(name)" in blocks[1]
+    
+    def test_extract_code_blocks_no_blocks(self):
+        """Test extract_code_blocks with no code blocks."""
+        text = "This text has no code blocks."
+        
+        blocks = extract_code_blocks(text)
+        
+        assert len(blocks) == 0
+        assert blocks == []
+    
+    def test_extract_code_blocks_nested_backticks(self):
+        """Test extract_code_blocks with nested backticks."""
+        text = """
+        Here is some code with nested backticks:
+        
+        ```
+        function nestedTicks() {
+            console.log(`This is a template string with ${variable}`);
+        }
+        ```
+        """
+        
+        blocks = extract_code_blocks(text)
+        
+        assert len(blocks) == 1
+        assert "function nestedTicks()" in blocks[0]
+        assert "This is a template string" in blocks[0]
+    
+    def test_extract_code_blocks_multiple_blocks(self):
+        """Test extract_code_blocks with multiple code blocks."""
+        text = """
+        First code block:
+        ```
+        def func1():
+            pass
+        ```
+        
+        Second code block:
+        ```
+        def func2():
+            pass
+        ```
+        
+        Third code block:
+        ```
+        def func3():
+            pass
+        ```
+        """
+        
+        blocks = extract_code_blocks(text)
+        
+        assert len(blocks) == 3
+        assert "def func1()" in blocks[0]
+        assert "def func2()" in blocks[1]
+        assert "def func3()" in blocks[2]

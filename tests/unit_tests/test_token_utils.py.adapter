@@ -1,0 +1,124 @@
+"""
+Tests for token utility functions.
+
+This module verifies that the token utility functions work correctly.
+"""
+
+import pytest
+import sys
+import os
+
+# Add project root to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+# Import from adapter instead of directly
+from test_adapters.utils_adapter import get_token_count, truncate_to_token_limit
+
+
+class TestTokenUtils:
+    """Test suite for token utility functions."""
+    
+    def test_count_tokens_with_short_text(self):
+        """Test count_tokens with short text."""
+        text = "This is a short text."
+        token_count = get_token_count(text)
+        
+        assert isinstance(token_count, int)
+        assert token_count > 0
+        assert token_count < 10  # Short text should have few tokens
+    
+    def test_count_tokens_with_long_text(self):
+        """Test count_tokens with long text."""
+        text = "This is a longer text. " * 20  # Repeat to make it longer
+        token_count = get_token_count(text)
+        
+        assert isinstance(token_count, int)
+        assert token_count > 20  # Should have many more tokens
+    
+    def test_count_tokens_with_special_characters(self):
+        """Test count_tokens with special characters."""
+        text = "Special characters: !@#$%^&*()_+=-{}[]|\\:;\"'<>,.?/~`"
+        token_count = get_token_count(text)
+        
+        assert isinstance(token_count, int)
+        assert token_count > 0
+    
+    def test_count_tokens_with_code(self):
+        """Test count_tokens with code snippets."""
+        code = """
+        def hello_world():
+            print("Hello, World!")
+            return True
+        """
+        token_count = get_token_count(code)
+        
+        assert isinstance(token_count, int)
+        assert token_count > 0
+    
+    def test_count_tokens_with_different_models(self):
+        """Test count_tokens with different model parameters."""
+        text = "This is a sample text for token counting."
+        
+        # Test with default model
+        default_count = get_token_count(text)
+        
+        # Test with explicitly specified models - use models known to work with tiktoken
+        models = ["gpt-4"] # Limiting models to avoid compatibility issues
+        for model in models:
+            try:
+                model_count = get_token_count(text, model=model)
+                assert isinstance(model_count, int)
+                assert model_count > 0
+            except KeyError:
+                # Skip models not supported by tiktoken
+                pytest.skip(f"Model {model} not supported by tiktoken")
+    
+    def test_truncate_to_token_limit_no_truncation_needed(self):
+        """Test truncate_to_token_limit when no truncation is needed."""
+        text = "This is a short text."
+        token_limit = 20
+        
+        result = truncate_to_token_limit(text, token_limit)
+        
+        assert result == text
+        assert get_token_count(result) <= token_limit
+    
+    def test_truncate_to_token_limit_truncation_needed(self):
+        """Test truncate_to_token_limit when truncation is needed."""
+        text = "This is a longer text that will need to be truncated. " * 10
+        token_limit = 10
+        
+        result = truncate_to_token_limit(text, token_limit)
+        
+        assert result != text
+        assert get_token_count(result) <= token_limit
+        assert text.startswith(result)  # Result should be the beginning of original text
+    
+    def test_truncate_to_token_limit_edge_cases(self):
+        """Test truncate_to_token_limit with edge cases."""
+        # Empty text
+        assert truncate_to_token_limit("", 10) == ""
+        
+        # Token limit of 0 or negative
+        assert truncate_to_token_limit("Some text", 0) == ""
+        assert truncate_to_token_limit("Some text", -5) == ""
+        
+        # Token limit exactly equal to token count
+        text = "Short text."
+        token_count = get_token_count(text)
+        assert truncate_to_token_limit(text, token_count) == text
+    
+    def test_truncate_to_token_limit_different_models(self):
+        """Test truncate_to_token_limit with different models."""
+        text = "This is a sample text for truncation. " * 10
+        token_limit = 10
+        
+        # Test with different models - use models known to work with tiktoken
+        models = ["gpt-4"] # Limiting models to avoid compatibility issues
+        for model in models:
+            try:
+                result = truncate_to_token_limit(text, token_limit, model=model)
+                assert get_token_count(result, model=model) <= token_limit
+            except KeyError:
+                # Skip models not supported by tiktoken
+                pytest.skip(f"Model {model} not supported by tiktoken")

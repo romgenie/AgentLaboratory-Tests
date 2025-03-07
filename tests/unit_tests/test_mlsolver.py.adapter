@@ -1,0 +1,341 @@
+import pytest
+import os
+import sys
+from unittest.mock import patch, MagicMock
+
+# Add project root to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+# Import from the adapter instead of the original module
+from test_adapters.mlsolver_adapter import (
+    Command, 
+    Replace, 
+    Edit, 
+    MLESolver, 
+    get_score, 
+    code_repair, 
+    execute_code, 
+    extract_prompt
+)
+
+class TestCommand:
+    """Test suite for base Command class and its implementations."""
+    
+    def test_command_interface(self):
+        """Test that Command class defines required interface methods."""
+        cmd = Command()
+        
+        # Verify Command has required abstract methods
+        assert hasattr(cmd, 'docstring')
+        assert hasattr(cmd, 'execute_command')
+        assert hasattr(cmd, 'matches_command')
+        assert hasattr(cmd, 'parse_command')
+        
+        # Verify the cmd_type attribute is set
+        assert hasattr(cmd, 'cmd_type')
+        assert cmd.cmd_type == "OTHER"
+
+class TestReplace:
+    """Test suite for Replace command implementation."""
+    
+    def test_replace_init(self):
+        """Test Replace command initialization."""
+        replace_cmd = Replace()
+        assert replace_cmd.cmd_type == "CODE-replace"
+        
+    def test_replace_docstring(self):
+        """Test Replace command docstring method."""
+        replace_cmd = Replace()
+        docstring = replace_cmd.docstring()
+        assert isinstance(docstring, str)
+        assert "REPLACE" in docstring
+        assert "code replacing tool" in docstring.lower()
+        
+    def test_replace_matches_command(self):
+        """Test Replace command matching method."""
+        replace_cmd = Replace()
+        
+        # Should match
+        assert replace_cmd.matches_command("```REPLACE\ndef function():\n    pass\n```")
+        
+        # Should not match
+        assert not replace_cmd.matches_command("```EDIT 1 2\ndef function():\n    pass\n```")
+        assert not replace_cmd.matches_command("Some random text without a command")
+        
+    def test_replace_parse_command(self):
+        """Test Replace command parsing."""
+        replace_cmd = Replace()
+        valid_cmd = "```REPLACE\ndef test_function():\n    return 42\n```"
+        dataset_code = "# Sample dataset code"
+        
+        success, result = replace_cmd.parse_command(valid_cmd, dataset_code)
+        assert success is True
+        assert isinstance(result, tuple)
+        assert isinstance(result[0], list)  # code lines
+        assert isinstance(result[1], str)   # execution result
+        
+        # Test error case
+        error_cmd = "```REPLACE\ndef function_with_error():\n    raise error('test')\n```"
+        success, result = replace_cmd.parse_command(error_cmd, dataset_code)
+        assert success is False
+        assert "[CODE EXECUTION ERROR]" in result[1]
+        
+    def test_replace_execute_command(self):
+        """Test Replace command execution."""
+        replace_cmd = Replace()
+        
+        # Simple test case
+        test_code = "def test_function():\n    return 42"
+        args = (test_code,)
+        
+        result = replace_cmd.execute_command(args)
+        assert result == test_code
+
+
+class TestEdit:
+    """Test suite for Edit command implementation."""
+    
+    def test_edit_init(self):
+        """Test Edit command initialization."""
+        edit_cmd = Edit()
+        assert edit_cmd.cmd_type == "CODE-edit"
+        
+    def test_edit_docstring(self):
+        """Test Edit command docstring method."""
+        edit_cmd = Edit()
+        docstring = edit_cmd.docstring()
+        assert isinstance(docstring, str)
+        assert "EDIT" in docstring
+        assert "code editing tool" in docstring.lower()
+        
+    def test_edit_matches_command(self):
+        """Test Edit command matching method."""
+        edit_cmd = Edit()
+        
+        # Should match
+        assert edit_cmd.matches_command("```EDIT 1 2\ndef function():\n    pass\n```")
+        
+        # Should not match
+        assert not edit_cmd.matches_command("```REPLACE\ndef function():\n    pass\n```")
+        assert not edit_cmd.matches_command("Some random text without a command")
+        
+    def test_edit_parse_command(self):
+        """Test Edit command parsing."""
+        edit_cmd = Edit()
+        valid_cmd = "```EDIT 1 2\ndef new_function():\n    return 'updated'\n```"
+        code_lines = ["def old_function():", "    return 'old'", "# end of file"]
+        dataset_code = "# Sample dataset code"
+        
+        success, args = edit_cmd.parse_command(valid_cmd, code_lines, dataset_code)
+        assert success is True
+        assert isinstance(args, tuple)
+        assert len(args) == 5
+        assert args[0] == 1  # start line
+        assert args[1] == 2  # end line
+        assert args[2] == code_lines  # original code
+        assert isinstance(args[3], list)  # new lines
+        assert args[4] == dataset_code  # dataset code
+        
+    def test_edit_execute_command(self):
+        """Test Edit command execution."""
+        edit_cmd = Edit()
+        code_lines = ["def old_function():", "    return 'old'", "# end of file"]
+        new_lines = ["def new_function():", "    return 'new'"]
+        
+        success, result, msg = edit_cmd.execute_command((1, 2, code_lines, new_lines, "# dataset"))
+        assert success is True
+        assert isinstance(result, list)
+        assert len(result) == 3
+        assert result[1] == "def new_function():"
+        assert "Edit successful" in msg
+
+
+class TestMLESolver:
+    """Test suite for MLESolver class."""
+    
+    @pytest.fixture
+    def sample_dataset_code(self):
+        """Provide sample dataset code for testing."""
+        return "import numpy as np\nimport pandas as pd\n\ndef load_data():\n    return np.random.rand(100, 10), np.random.randint(0, 2, 100)"
+    
+    @pytest.fixture
+    def sample_plan(self):
+        """Provide a sample research plan for testing."""
+        return "Build a machine learning model to classify the data with at least 80% accuracy."
+    
+    @pytest.fixture
+    def sample_insights(self):
+        """Provide sample insights for testing."""
+        return "Recent research shows that ensemble methods often perform better on this type of data."
+    
+    @pytest.fixture
+    def mle_solver(self, sample_dataset_code, sample_plan, sample_insights):
+        """Initialize an MLESolver instance for testing."""
+        return MLESolver(
+            dataset_code=sample_dataset_code,
+            openai_api_key="fake_api_key",
+            notes=["Use cross-validation"],
+            plan=sample_plan,
+            insights=sample_insights,
+            llm_str="gpt-4o"
+        )
+    
+    def test_mle_solver_init(self, mle_solver, sample_dataset_code, sample_plan, sample_insights):
+        """Test MLESolver initialization."""
+        assert mle_solver.dataset_code == sample_dataset_code
+        assert mle_solver.plan == sample_plan
+        assert mle_solver.insights == sample_insights
+        assert mle_solver.llm_str == "gpt-4o"
+        assert mle_solver.notes == ["Use cross-validation"]
+        assert mle_solver.max_steps == 10
+        
+    def test_system_prompt(self, mle_solver):
+        """Test system prompt generation."""
+        prompt = mle_solver.system_prompt()
+        assert isinstance(prompt, str)
+        assert "ML Engineer" in prompt
+        assert mle_solver.plan in prompt
+        assert mle_solver.insights in prompt
+        
+    def test_command_descriptions(self, mle_solver):
+        """Test command descriptions."""
+        descriptions = mle_solver.command_descriptions()
+        assert isinstance(descriptions, str)
+        assert "EDIT" in descriptions
+        assert "REPLACE" in descriptions
+        
+    def test_process_command_replace(self, mle_solver):
+        """Test processing a Replace command."""
+        # Set up the solver
+        mle_solver.code_lines = ["# Old code"]
+        
+        # Test successful command
+        cmd_str = "```REPLACE\n# New code\ndef test_function():\n    return 42\n```"
+        result = mle_solver.process_command(cmd_str)
+        
+        # Check results
+        assert isinstance(result, tuple)
+        assert len(result) == 5
+        assert result[0] == cmd_str  # cmd_str
+        assert isinstance(result[1], list)  # code_lines
+        assert "# New code" in result[1]  # code content
+        assert isinstance(result[2], str)  # prev_code_ret
+        assert result[3] is True  # should_execute_code
+        assert result[4] == 0.85  # score
+        
+        # Test error command
+        cmd_str = "```REPLACE\n# Code with error\ndef test_function():\n    raise error('test')\n```"
+        result = mle_solver.process_command(cmd_str)
+        
+        # Check results
+        assert isinstance(result, tuple)
+        assert len(result) == 5
+        assert result[3] is False  # should_execute_code (error detected)
+        assert result[4] == 0.0  # score (error means 0)
+        
+    def test_process_command_edit(self, mle_solver):
+        """Test processing an Edit command."""
+        # Set up the solver with initial code
+        mle_solver.code_lines = ["# Line 0", "# Line 1", "# Line 2", "# Line 3"]
+        
+        # Test successful command
+        cmd_str = "```EDIT 1 2\n# New line 1\n# New line 2\n```"
+        result = mle_solver.process_command(cmd_str)
+        
+        # Check results
+        assert isinstance(result, tuple)
+        assert len(result) == 5
+        assert result[0] == cmd_str  # cmd_str
+        assert isinstance(result[1], list)  # code_lines
+        assert "# New line 1" in result[1]  # new code content
+        assert isinstance(result[2], str)  # prev_code_ret
+        assert result[3] is True  # should_execute_code
+        assert result[4] == 0.80  # score
+        
+        # Test invalid command
+        cmd_str = "```EDIT invalid\n# New line\n```"
+        result = mle_solver.process_command(cmd_str)
+        
+        # Check results
+        assert isinstance(result, tuple)
+        assert len(result) == 5
+        assert result[3] is False  # should_execute_code (error detected)
+        assert result[4] == 0.0  # score (error means 0)
+        
+    def test_process_command_unknown(self, mle_solver):
+        """Test processing an unknown command."""
+        cmd_str = "```UNKNOWN\nSome content\n```"
+        result = mle_solver.process_command(cmd_str)
+        
+        # Check results
+        assert isinstance(result, tuple)
+        assert len(result) == 5
+        assert result[0] == cmd_str  # cmd_str
+        assert result[2] == "Unknown command"  # error message
+        assert result[3] is False  # should_execute_code
+        assert result[4] == 0.0  # score
+
+
+class TestHelperFunctions:
+    """Test suite for helper functions."""
+    
+    def test_get_score(self):
+        """Test get_score function."""
+        plan = "Build a machine learning model with high accuracy"
+        good_code = "from sklearn.ensemble import RandomForestClassifier\nclf = RandomForestClassifier()\nclf.fit(X_train, y_train)"
+        bad_code = "# Code with bugs\nmodel.fit(X_train, y_train) # error - model not defined"
+        
+        # Test good code
+        score, msg, success = get_score(plan, good_code, "Accuracy: 0.92", "gpt-4o")
+        assert isinstance(score, float)
+        assert score > 0.8
+        assert "performance" in msg
+        assert success is True
+        
+        # Test bad code
+        score, msg, success = get_score(plan, bad_code, "Error in execution", "gpt-4o")
+        assert isinstance(score, float)
+        assert score < 0.8
+        assert "performance" in msg
+        
+    def test_code_repair(self):
+        """Test code_repair function."""
+        code = "def broken_function():\n    printt('Hello')"  # typo
+        error = "NameError: name 'printt' is not defined"
+        
+        # Test replace type repair
+        repaired = code_repair(code, error, "replace", "gpt-4o")
+        assert isinstance(repaired, str)
+        assert "Fixed code" in repaired
+        
+        # Test edit type repair
+        repaired = code_repair(code, error, "edit", "gpt-4o")
+        assert isinstance(repaired, str)
+        assert "EDIT" in repaired
+        
+    def test_execute_code(self):
+        """Test execute_code function."""
+        # Test successful execution
+        good_code = "a = 1 + 1\nprint(a)"
+        result = execute_code(good_code)
+        assert isinstance(result, str)
+        assert "successfully" in result
+        
+        # Test error execution
+        bad_code = "raise ValueError('Test error')"
+        result = execute_code(bad_code)
+        assert isinstance(result, str)
+        assert "[CODE EXECUTION ERROR]" in result
+        
+    def test_extract_prompt(self):
+        """Test extract_prompt function."""
+        # Test REPLACE extraction
+        replace_cmd = "```REPLACE\ndef function():\n    return 42\n```"
+        extracted = extract_prompt(replace_cmd, "REPLACE")
+        assert "def function():" in extracted
+        
+        # Test EDIT extraction
+        edit_cmd = "```EDIT 1 2\ndef function():\n    return 42\n```"
+        extracted = extract_prompt(edit_cmd, "EDIT")
+        assert "1 2" in extracted
+        assert "def function():" in extracted
