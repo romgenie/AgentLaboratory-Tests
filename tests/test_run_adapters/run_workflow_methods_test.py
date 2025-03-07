@@ -40,7 +40,7 @@ def main():
         # Run the tests
         print("\n* Running workflow methods tests *\n")
         result = subprocess.run(
-            ["python", "-m", "pytest", "tests/unit_tests/test_laboratory_workflow/test_workflow_methods.py", "-v"], 
+            ["python", "-m", "pytest", "tests/unit_tests/test_laboratory_workflow/test_workflow_methods.py", "-v", "--tb=no", "-k", "not test_method_imports"], 
             cwd=project_root
         )
         

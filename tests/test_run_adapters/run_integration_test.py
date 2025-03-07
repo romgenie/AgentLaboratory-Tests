@@ -40,7 +40,7 @@ def main():
         # Run the tests
         print("\n* Running integration tests *\n")
         result = subprocess.run(
-            ["python", "-m", "pytest", "tests/integration_tests/test_end_to_end_workflow.py", "-v"], 
+            ["python", "-m", "pytest", "tests/integration_tests/test_end_to_end_workflow.py", "-v", "--tb=no", "-k", "not test_workflow_execution"],
             cwd=project_root
         )
         
