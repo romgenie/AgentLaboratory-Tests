@@ -55,8 +55,10 @@ class DataPreparation:
         pass
 # Postdoc import removed since class is not available
 # from agents.postdoc_agent import PostdocAgent 
-from agents.phd_student_agent import PhDStudentAgent
-from agents.professor_agent import ProfessorAgent  # Using Professor as substitute
+from test_adapters.laboratory_adapter import (
+    PhDStudentAgentAdapter as PhDStudentAgent,
+    ProfessorAgentAdapter as ProfessorAgent  # Using Professor as substitute
+)
 
 class TestDataPreparation:
     """Test suite for the data preparation phase."""
@@ -169,7 +171,7 @@ class TestDataPreparation:
         call_args = data_preparation.phd_student_agent.get_response.call_args[0][0]
         assert "preprocessing" in call_args.lower() or "pipeline" in call_args.lower()
         
-    @patch('agents.phd_student_agent.PhDStudentAgent.get_response')
+    @patch('test_adapters.laboratory_adapter.PhDStudentAgentAdapter.get_response')
     def test_implement_data_preprocessing(self, mock_get_response, data_preparation):
         """Test implementing data preprocessing based on pipeline."""
         mock_get_response.return_value = """
