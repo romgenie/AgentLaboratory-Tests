@@ -167,7 +167,7 @@ class TestSpecializedAgents:
         assert ml_engineer_agent.phases == expected_phases
         assert "machine learning engineer" in ml_engineer_agent.role_description()
         
-    @patch('inference.query_model')
+    @patch('test_adapters.laboratory_adapter.query_model')
     def test_phd_student_add_review(self, mock_query, phd_student_agent):
         """Test adding a review to the literature review."""
         # Setup mock arxiv engine
