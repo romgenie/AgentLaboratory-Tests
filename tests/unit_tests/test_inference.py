@@ -32,30 +32,55 @@ class TestInferenceModule:
             # Assert they match
             assert abs(actual_cost - expected_cost) < 1e-10, f"Expected {expected_cost}, got {actual_cost}"
     
-    @patch('openai.OpenAI')
-    def test_query_model_gpt4o_mini(self, mock_openai):
+    def test_query_model_gpt4o_mini(self):
         """Test querying the GPT-4o-mini model."""
-        # Setup mock OpenAI client
-        mock_client = MagicMock()
-        mock_openai.return_value = mock_client
-        
-        # Setup mock completion
-        mock_completion = MagicMock()
-        mock_completion.choices = [MagicMock()]
-        mock_completion.choices[0].message.content = "Test response"
-        mock_client.chat.completions.create.return_value = mock_completion
-        
-        # Call function with test inputs
-        result = query_model(
-            model_str="gpt-4o-mini",
-            prompt="Test prompt",
-            system_prompt="Test system prompt",
-            openai_api_key="fake-api-key",
-            print_cost=False
-        )
-        
-        # Check that OpenAI client was called correctly
-        mock_client.chat.completions.create.assert_called_once()
-        
-        # Check that the result is correct
-        assert result == "Test response"
+        with patch('inference.OpenAI') as mock_openai_class, \
+             patch('inference.tiktoken.encoding_for_model') as mock_encoding_for_model, \
+             patch.dict('inference.TOKENS_IN', clear=True), \
+             patch.dict('inference.TOKENS_OUT', clear=True):
+            
+            # Setup mock OpenAI client
+            mock_client = MagicMock()
+            mock_openai_class.return_value = mock_client
+            
+            # Setup mock completion
+            mock_completion = MagicMock()
+            mock_completion.choices = [MagicMock()]
+            mock_completion.choices[0].message.content = "Test response"
+            mock_client.chat.completions.create.return_value = mock_completion
+            
+            # Setup mock encoding
+            mock_encoding = MagicMock()
+            mock_encoding.encode.return_value = [1, 2, 3]  # Simulate token encoding
+            mock_encoding_for_model.return_value = mock_encoding
+            
+            # Call function with test inputs
+            result = query_model(
+                model_str="gpt-4o-mini",
+                prompt="Test prompt",
+                system_prompt="Test system prompt",
+                openai_api_key="fake-api-key",
+                print_cost=False,
+                tries=1  # Use just 1 try to speed up test
+            )
+            
+            # Check that OpenAI client was instantiated
+            mock_openai_class.assert_called_once()
+            
+            # Check that chat completions were created
+            mock_client.chat.completions.create.assert_called_once()
+            
+            # Verify the model parameter (most important part)
+            args, kwargs = mock_client.chat.completions.create.call_args
+            assert kwargs.get('model') == "gpt-4o-mini-2024-07-18"
+            
+            # Check messages structure
+            messages = kwargs.get('messages')
+            assert len(messages) == 2
+            assert messages[0]['role'] == 'system'
+            assert messages[0]['content'] == 'Test system prompt'
+            assert messages[1]['role'] == 'user'
+            assert messages[1]['content'] == 'Test prompt'
+            
+            # Check that the result is correct
+            assert result == "Test response"
