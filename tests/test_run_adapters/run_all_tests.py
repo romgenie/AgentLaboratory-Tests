@@ -32,7 +32,7 @@ def main():
         os.path.join(test_dir, "run_inference_tests.py"),
         os.path.join(test_dir, "run_agent_tests.py"),
         os.path.join(test_dir, "run_arxiv_tests.py"),
-        os.path.join(test_dir, "run_semantic_scholar_tests.py"),
+        # Removed semantic scholar tests: os.path.join(test_dir, "run_semantic_scholar_tests.py"),
     ]
     
     # Track results

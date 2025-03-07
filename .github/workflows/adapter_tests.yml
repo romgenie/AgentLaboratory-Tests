@@ -39,8 +39,9 @@ jobs:
         python tests/test_run_adapters/run_token_utils_test.py || echo "Token utils test failed but continuing"
         python tests/test_run_adapters/run_text_utils_test.py || echo "Text utils test failed but continuing"
         python tests/test_run_adapters/run_file_utils_test.py || echo "File utils test failed but continuing"
-        python tests/test_run_adapters/run_arxiv_tests.py || echo "ArXiv tests failed but continuing"
-        python tests/test_run_adapters/run_semantic_scholar_tests.py || echo "Semantic Scholar tests failed but continuing"
+        # Removed tests that don't exist anymore:
+        # python tests/test_run_adapters/run_arxiv_tests.py || echo "ArXiv tests failed but continuing"
+        # python tests/test_run_adapters/run_semantic_scholar_tests.py || echo "Semantic Scholar tests failed but continuing"
     
     - name: Run integrated adapter tests
       continue-on-error: true

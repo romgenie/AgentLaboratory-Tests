@@ -34,17 +34,19 @@ jobs:
         python tests/test_run_adapters/run_text_utils_test.py
         python tests/test_run_adapters/run_file_utils_test.py
         python tests/test_run_adapters/run_code_executor_test.py
-        python tests/test_run_adapters/run_latex_utils_test.py
-        python tests/test_run_adapters/run_inference_tests.py
-        python tests/test_run_adapters/run_arxiv_tests.py
-        python tests/test_run_adapters/run_semantic_scholar_tests.py
-        python tests/test_run_adapters/run_hf_data_test.py
+        # Removed tests that have been deleted:
+        # python tests/test_run_adapters/run_latex_utils_test.py
+        # python tests/test_run_adapters/run_inference_tests.py
+        # python tests/test_run_adapters/run_arxiv_tests.py
+        # python tests/test_run_adapters/run_semantic_scholar_tests.py
+        # python tests/test_run_adapters/run_hf_data_test.py
     
     - name: Run integrated adapter tests
       run: |
         python tests/test_run_adapters/run_mlsolver_test.py
-        python tests/test_run_adapters/run_workflow_methods_test.py
-        python tests/test_run_adapters/run_integration_test.py
+        # Removed tests that have been deleted:
+        # python tests/test_run_adapters/run_workflow_methods_test.py
+        # python tests/test_run_adapters/run_integration_test.py
     
     - name: Run all adapter tests with coverage
       run: |
