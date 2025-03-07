@@ -7,10 +7,13 @@ from unittest.mock import patch, MagicMock, mock_open
 # Add project root to the path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from agents_phases.plan_formulation import PlanFormulation
-from agents.professor_agent import ProfessorAgent
-from agents.phd_student_agent import PhDStudentAgent
-from agents.reviewers_agent import ReviewersAgent
+# Import using adapter classes instead of the actual modules
+from test_adapters.laboratory_adapter import (
+    PlanFormulationAdapter as PlanFormulation,
+    ProfessorAgentAdapter as ProfessorAgent,
+    PhDStudentAgentAdapter as PhDStudentAgent, 
+    ReviewersAgentAdapter as ReviewersAgent
+)
 
 
 class TestPlanFormulation:
