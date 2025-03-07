@@ -161,6 +161,33 @@ For example, if you are running in Chinese:
 
 There is a lot of room to improve this codebase, so if you end up making changes and want to help the community, please feel free to share the changes you've made! We hope this tool helps you!
 
+## 🧪 Running Tests
+
+The project includes a comprehensive test framework. To run all tests:
+
+```bash
+python tests/test_run_adapters/run_all_tests.py
+```
+
+To run specific test categories:
+
+```bash
+python tests/test_run_adapters/run_agent_tests.py  # Run agent-related tests
+python tests/test_run_adapters/run_inference_tests.py  # Run inference-related tests
+```
+
+### 🛠️ Fixing Test Structure Issues
+
+If you encounter issues with tests failing due to import errors or module structure mismatches, consider the following approaches:
+
+1. **Update the test_adapters**: Modify the adapter files to correctly import and expose the functionality that tests expect.
+
+2. **Fix import paths**: Ensure that test files are using the correct import paths, either by updating them or by using the adapters.
+
+3. **Match actual structure**: Restructure the tests to match the actual project structure, rather than expecting a different structure.
+
+For example, if the tests expect modules like `agents.base_agent` but your code has a flat structure with just `agents.py`, update the adapters to expose the classes from `agents.py` as if they were coming from the expected module structure.
+
 
 ## 📜 License
 

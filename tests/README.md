@@ -68,6 +68,49 @@ from test_adapters.inference_adapter import query_model
 from test_adapters.laboratory_adapter import LaboratoryWorkflow
 ```
 
+### Fixing Module Structure Mismatches
+
+A common issue with the tests is mismatches between the expected module structure and the actual project structure. Here's how to fix these issues:
+
+#### Problem: Tests expect a package structure that doesn't exist
+
+For example, tests might expect:
+```python
+from agents.base_agent import BaseAgent
+```
+
+But the actual code has everything in a single file:
+```python
+from agents import BaseAgent  # Actual structure
+```
+
+#### Solution: Update the adapter files
+
+1. Modify the adapter file to import from the correct location:
+   ```python
+   # Change this:
+   from agents.base_agent import BaseAgent
+   
+   # To this:
+   from agents import BaseAgent
+   ```
+
+2. Update patch paths in tests:
+   ```python
+   # Change this:
+   @patch('inference.query_model')
+   
+   # To this:
+   @patch('test_adapters.inference_adapter.query_model')
+   ```
+
+3. If necessary, create wrapper classes in the adapter files to match the expected interfaces.
+
+#### Examples of Fixed Tests
+
+- `test_base_agent.py`: Updated to import directly from agents.py
+- `test_inference/test_query_model.py`: Updated to use the inference_adapter module
+
 ## Test Coverage
 The project aims for high test coverage. Current coverage can be viewed by running:
 ```bash
