@@ -2,7 +2,7 @@ name: Agent Laboratory Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, add-test-framework-pr ]
   pull_request:
     branches: [ main ]
 
