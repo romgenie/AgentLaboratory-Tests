@@ -14,25 +14,23 @@ class TestInferenceModule:
     
     def test_curr_cost_est(self):
         """Test the current cost estimation function."""
-        # Setup a controlled environment for tokens
+        # Import for patch.dict
         from inference import TOKENS_IN, TOKENS_OUT
         
-        # Clear existing token counts
-        TOKENS_IN.clear()
-        TOKENS_OUT.clear()
-        
-        # Set known values
-        TOKENS_IN["gpt-4o-mini"] = 1000
-        TOKENS_OUT["gpt-4o-mini"] = 500
-        
-        # Calculate expected cost based on rates in curr_cost_est
-        expected_cost = (1000 * 0.150 / 1000000) + (500 * 0.6 / 1000000)
-        
-        # Get actual cost
-        actual_cost = curr_cost_est()
-        
-        # Assert they match
-        assert abs(actual_cost - expected_cost) < 1e-10, f"Expected {expected_cost}, got {actual_cost}"
+        # Using patch.dict to mock the global dictionaries without modifying global state
+        with patch.dict('inference.TOKENS_IN', {}), patch.dict('inference.TOKENS_OUT', {}):
+            # Set known values
+            TOKENS_IN["gpt-4o-mini"] = 1000
+            TOKENS_OUT["gpt-4o-mini"] = 500
+            
+            # Calculate expected cost based on rates in curr_cost_est
+            expected_cost = (1000 * 0.150 / 1000000) + (500 * 0.6 / 1000000)
+            
+            # Get actual cost
+            actual_cost = curr_cost_est()
+            
+            # Assert they match
+            assert abs(actual_cost - expected_cost) < 1e-10, f"Expected {expected_cost}, got {actual_cost}"
     
     @patch('openai.OpenAI')
     def test_query_model_gpt4o_mini(self, mock_openai):
