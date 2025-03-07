@@ -67,20 +67,16 @@ class TestInferenceModule:
             # Check that OpenAI client was instantiated
             mock_openai_class.assert_called_once()
             
-            # Check that chat completions were created
-            mock_client.chat.completions.create.assert_called_once()
+            # Check that chat completions were created with the exact expected parameters
+            expected_messages = [
+                {"role": "system", "content": "Test system prompt"},
+                {"role": "user", "content": "Test prompt"}
+            ]
             
-            # Verify the model parameter (most important part)
-            args, kwargs = mock_client.chat.completions.create.call_args
-            assert kwargs.get('model') == "gpt-4o-mini-2024-07-18"
-            
-            # Check messages structure
-            messages = kwargs.get('messages')
-            assert len(messages) == 2
-            assert messages[0]['role'] == 'system'
-            assert messages[0]['content'] == 'Test system prompt'
-            assert messages[1]['role'] == 'user'
-            assert messages[1]['content'] == 'Test prompt'
+            mock_client.chat.completions.create.assert_called_once_with(
+                model="gpt-4o-mini-2024-07-18",
+                messages=expected_messages
+            )
             
             # Check that the result is correct
             assert result == "Test response"
