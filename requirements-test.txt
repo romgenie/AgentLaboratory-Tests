@@ -1,0 +1,12 @@
+# Testing dependencies for Agent Laboratory
+pytest==7.4.0
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+pytest-timeout==2.1.0
+pytest-xdist==3.3.1
+hypothesis==6.84.2
+psutil==6.1.0
+coverage==7.3.2
+
+# Dependencies for mocking and simulation
+responses==0.23.3
