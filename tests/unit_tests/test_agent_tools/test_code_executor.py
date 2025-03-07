@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 # Add project root to the path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
-from agents_tools.code_executor import execute_code
+from test_adapters.code_executor_adapter import execute_code
 
 class TestCodeExecutor:
     """Test suite for code execution functionality."""

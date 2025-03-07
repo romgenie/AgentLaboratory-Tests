@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 # Import the module - even though it's empty, we'll create a test structure for future implementation
-from agents_tools import hf_data_search
+from test_adapters.hf_data_adapter import hf_data_search
 
 class TestHFDataSearch:
     """Test suite for Hugging Face dataset search functionality."""

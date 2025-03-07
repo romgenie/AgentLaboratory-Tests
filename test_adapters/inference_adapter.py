@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Any, Union
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Import the actual implementation
-from inference.query_model import query_model as original_query_model
+from inference import query_model as original_query_model
 
 # Enhanced query_model with more testing capabilities
 def query_model(model_str, prompt, system_prompt=None, openai_api_key=None, temp=0.7, max_tokens=None):
